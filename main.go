@@ -1,22 +1,29 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
+	"sync"
 	"time"
 )
 
+var wg sync.WaitGroup
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	number := rand.Intn(2)
+	if number == 0 {
+		time.Sleep(time.Second * 10)
+		fmt.Printf("slow response")
+		return
+	}
+	fmt.Fprint(w, "quick response")
+}
+
 func main() {
-
-	d := time.Now().Add(50 * time.Millisecond)
-	ctx, cancelFunc := context.WithDeadline(context.Background(), d)
-	defer cancelFunc()
-
-	select {
-	case <-time.After(1 * time.Second):
-		fmt.Println("overslept")
-	case <-ctx.Done():
-		fmt.Println(ctx.Err())
-
+	http.HandleFunc("/", indexHandler)
+	err := http.ListenAndServe(":8000", nil)
+	if err != nil {
+		panic(err)
 	}
 }
